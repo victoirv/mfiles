@@ -3,7 +3,7 @@ function [xnew, corr, ca, cb,cc] = IR(x,f,numxcoef,numfcoef,lag)
 %Where ca are the x coefficients, cb the f coefficients
 %Allows for a matrix of impulses
 %***Important: Assumes more data points than impulses***%
-
+ 
 if (nargin < 4) || (nargin > 5)
     disp('Usage: [xnew, corr, ca, cb] = IRm(x,f,numxcoef,numfcoef,lag)');
     disp('Where ca are the x coefficients, cb the f coefficients');
