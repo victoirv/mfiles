@@ -46,26 +46,29 @@ for i=1:numfcoef
         A(1:len,i+numxcoef+(j-1)*numfcoef)=f(j,fstart+i-1:fstart+i-1+len-1);
     end
 end
+
+%Add sorter. A=[xs... fs... 1 sort]
 for i=1:len
-   A(i,end-1)=mean(sorter(xstart+i:xstart+numxcoef+i));
+   A(i,end)=mean(sorter(xstart+i:xstart+numxcoef+i));
 end
 
-A(:,end)=1;
+A(:,end-1)=1;
 
 b=x(predstart:predstart+len-1);
 A=[A(1:end,:) b'];
 
+%A=[xs... fs... 1 sort b]
 
 for a=1:(numxcoef+numfcoef+1+1+1) %+1 for mean-normalization coef (cc, column of 1s), +1 for sorter, and +1 for column of 'b'
     A(isnan(A(:,a)),:)=[];
 end
 
 %Now separate into two parts via sorter
-sorter=A(:,end-2);
+sorter=A(:,end-1);
 A2=A;
-split=median(sorter);
+split=mean(sorter);
 A(sorter>split,:)=[];
-A2(sorter<split,:)=[];
+A2(sorter<=split,:)=[];
 
 
 b=A(:,end);

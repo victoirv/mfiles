@@ -1,5 +1,5 @@
 function [xnew, xnew2, corr, corr2, ca, ca2, cb, cb2, cc, cc2, casd,ca2sd,cbsd,cb2sd] = IRsortboot(x,f,sorter,N,numxcoef,numfcoef,lag)
-%Usage: [xnew, xnew2, corr, corr2, ca, ca2, cb, cb2, cc, cc2] = IRsort(x,f,sorter,numxcoef,numfcoef,lag)
+%Usage: [xnew, xnew2, corr, corr2, ca, ca2, cb, cb2, cc, cc2, casd,ca2sd,cbsd,cb2sd] = IRsort(x,f,sorter,numxcoef,numfcoef,lag)
 %Where ca are the x coefficients, cb the f coefficients
 %Allows for a matrix of impulses
 %***Important: Assumes more data points than impulses***%
@@ -91,8 +91,8 @@ cc2s=zeros(N,1);
 len=size(A,1);
 len2=size(A2,1);
 for n=1:N
-    rs=randsample(len,len/2);
-    rs2=randsample(len2,len2/2);
+    rs=randsample(len,floor(len/2));
+    rs2=randsample(len2,floor(len2/2));
     Asamp=A(rs,:);
     A2samp=A2(rs2,:);
     

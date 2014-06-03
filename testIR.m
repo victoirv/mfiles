@@ -86,7 +86,7 @@ disp(ca');
 disp(cb');
 
 
-%Test 6: Both, 1 lag, rand
+%------------------.=^=.=^=.\/\/\/\/\/\/ testing comment dividers
 disp('Test 6: Both, 1 lag, +rand');
 x=rand(1,len);
 for i=nx+1:len-lag
@@ -97,8 +97,8 @@ disp(sprintf('Test 6 corr %2.3f and coefs:',corr));
 disp(ca');
 disp(cb');
 
-%Test 7: Both, no lags, constant term
-disp('Test 7: Both, no lags');
+%------------------
+disp('Test 7: Both, no lags, constant coef term');
 x=rand(1,len);
 for i=nx+1:len
     x(i)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)'+0.5;
@@ -109,7 +109,7 @@ disp(ca');
 disp(cb');
 disp(cc');
 
-%Test 7: Both, no lags, constant term, guess wrong number
+%------------------
 disp('Test 8: Both, no lags, guess wrong number of coeffs');
 x=rand(1,len);
 for i=nx+1:len
@@ -119,4 +119,42 @@ end
 disp(sprintf('Test 8 corr %2.3f and coefs:',corr));
 disp(ca');
 disp(cb');
+disp(cc');
+
+
+
+%------------------
+disp('Test 9: Sorted IR, but with same coefs');
+x=rand(1,len);
+sorter=1:len;
+for i=nx+1:len
+    x(i)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
+end
+[xnew,xnew2,corr,corr2,ca,ca2,cb,cb2,cc]=IRsort(x,f,sorter,5,5);
+disp(sprintf('Test 9 corr %2.3f and coefs:',corr));
+disp(ca');
+disp(ca2');
+disp(cb');
+disp(cb2');
+disp(cc');
+
+%------------------
+disp('Test 10: Sorted IR, second x coef just reverse of first');
+x=rand(1,len);
+sorter=1:len;
+for i=nx+1:len/2
+    x(i)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
+    %x2(i)=fliplr(xco)*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
+end
+xco2=[-0.3, 0.1, 0.1, -0.2, 0.3];
+for i=len/2+1:len
+    x(i)=xco2*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
+end
+%x(sorter>mean(sorter))=x2(sorter>mean(sorter));
+[xnew,xnew2,corr,corr2,ca,ca2,cb,cb2,cc]=IRsort(x,f,sorter,5,5);
+disp(sprintf('Test 10 corr %2.3f and coefs:',corr));
+disp(ca');
+disp(ca2');
+disp(cb');
+disp(cb2');
 disp(cc');
