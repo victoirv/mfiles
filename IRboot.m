@@ -1,10 +1,10 @@
-function [xnew, corr, ca, cb] = IRboot(x,f,numxcoef,numfcoef,lag)
+function [ca, cb, cc, xnew, corr, eff, xnew1, xnew2] = IRboot(x,f,numxcoef,numfcoef,lag,advance)
 %Usage: [xnew, corr, ca, cb] = IRm(t,x,f,numxcoef,numfcoef)
 %Where ca are the x coefficients, cb the f coefficients
 %Allows for a matrix of impulses
 %***Important: Assumes more data points than impulses***%
 
-if (nargin < 4) || (nargin > 5)
+if (nargin < 4) || (nargin > 6)
     disp('Usage: [xnew, corr, ca, cb] = IRm(t,x,f,numxcoef,numfcoef)');
     disp('Where ca are the x coefficients, cb the f coefficients');
     disp('***Important: Assumes more data points than impulses***');
@@ -12,6 +12,10 @@ if (nargin < 4) || (nargin > 5)
 end
 if nargin == 4
     lag=0;
+    advance=0;
+end
+if nargin == 5
+    advance=0;
 end
 
 %Make x and f row vectors for standardization purposes
@@ -31,84 +35,30 @@ datalen=length(x);
 
 xnewtotal=x;
 
+[ca1,cb1,cc1]=IR(x(1:floor(end/2)-1),f(1:floor(end/2)-1),numxcoef,numfcoef,lag,advance);
+[ca2,cb2,cc2]=IR(x(floor(end/2):end),f(floor(end/2):end),numxcoef,numfcoef,lag,advance);
 
-for half=1:2
-    
-    if half==1
-    xtrain=x(1:floor(end/2)-1);
-    ftrain=f(1:floor(end/2)-1);
-    xtest=x(floor(end/2):end);
-    ftest=f(floor(end/2):end);
-    
-    else
-    xtrain=x(floor(end/2):end);
-    ftrain=f(floor(end/2):end);
-    xtest=x(1:floor(end/2)-1);
-    ftest=f(1:floor(end/2)-1);
-    end   
-    
-    len=floor(length(xtrain)-predstart);
-    
-    A=zeros(len,numxcoef+numfcoef*numimpulses+1);
-    
-    %Must add +i-1 to shift column start point
-    for i=1:numxcoef
-        A(1:len,i)=xtrain(xstart+i-1:xstart+i-1+len-1);
-    end
-    for i=1:numfcoef
-        for j=1:numimpulses
-            A(1:len,i+numxcoef+(j-1)*numfcoef)=ftrain(j,fstart+i-1:fstart+i-1+len-1);
-        end
-    end
-    A(:,end)=1;
-    
-    b=xtrain(predstart:predstart+len-1);
-    A=[A(1:end,:) b'];
-    
-    for a=1:(numxcoef+numfcoef+1+1) %+1 for mean-normalization coef (cc, column of 1s), and +1 for column of 'b'
-        A(isnan(A(:,a)),:)=[];
-    end
-    b=A(:,end);
-    A=A(:,1:end-1);
-    
-    %Randomly sample rows to draw coefficients from, then average all sets
-    nsamp=100;
-    coefs=zeros(nsamp,numxcoef+numfcoef+1);
-    nrows=floor((rand(1)*size(A,1))/10);
-    for i=1:nsamp
-        rows=floor(rand(1,nrows)*size(A,1))+1;
-        coefs(i,:)=A(rows,:)\b(rows);
-    end
-    
-    coef=mean(coefs);
-    ca=coef(1:numxcoef);
-    cb=coef(numxcoef+1:end-1);
-    cc=coef(end);
-    
-    
-    xnew=zeros(1,length(xtest));
-    xnew(1:predstart)=xtest(1:predstart);
-    
-    %Anywhere f is nan, don't predict, just copy data
-    iter=1:(length(ftest));
+
+%xnew=xnewtotal;
+xnew=x;
+
+ca=(ca2+ca1)./2;
+cb=(cb2+cb1)./2;
+cc=(cc2+cc1)./2;
+
+    iter=1:(length(x));
     iter=iter(iter>=predstart); %Don't use copied variables
-    iter=iter(iter<=length(ftest)-lag); %Allow space to predict
+    iter=iter(iter<=length(x)-lag); %Allow space to predict
     
     for i=iter
         %xnew(i)=(xnew(i-numxcoef:1:i-1)'*ca)+(ftemp(i-numfcoef+1:1:i)'*cb)+cc;
-        xnew(i+lag)=(xtest(i-numxcoef:1:i-1)*ca')+(reshape(ftest(:,i-numfcoef:1:i-1),1,[])*cb')+cc;
+        xnew(i+lag)=(x(i-numxcoef:1:i-1)*ca)+(reshape(f(:,i-numfcoef:1:i-1),1,[])*cb)+cc;
+        xnew1(i+lag)=(x(i-numxcoef:1:i-1)*ca1)+(reshape(f(:,i-numfcoef:1:i-1),1,[])*cb1)+cc1;
+        xnew2(i+lag)=(x(i-numxcoef:1:i-1)*ca2)+(reshape(f(:,i-numfcoef:1:i-1),1,[])*cb2)+cc2;
+        
     end
-    
-    %xnew(isnan(f))=NaN;
-    if half==1
-    xnewtotal(floor(end/2):end)=xnew;
-    else
-    xnewtotal(1:floor(end/2)-1)=xnew;
-    end
-    
-end
 
-xnew=xnewtotal;
+
 
 %Calculate correlation here to save program from needing to strip NaNs
 skip=(isnan(xnew) | isnan(x));
@@ -130,5 +80,6 @@ for test=2:length(xnew)
    end
 end
 
-hit/miss
+eff=hit/miss;
+xnew=xnew';
 

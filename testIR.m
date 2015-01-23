@@ -7,7 +7,7 @@ nf=5;
 x=rand(1,len);
 f=rand(1,len);
 
-xco=[-0.5, 0.2, 0.3, -0.4, 0.4];
+xco=[-0.5, 0.4, 0.1, -0.4, 0.4];
 fco=[0.2, 0.3, -0.6, -0.4, 0.5];
 disp('Real x coefficients:');
 disp(xco);
@@ -22,13 +22,13 @@ for i=nx+1:len
 end
 
 %Correlation should be exact
-[xnew,corr,ca,cb]=IR(x,f,5,0);
+[ca,cb,cc,xnew,corr]=IR(x,f,5,0);
 disp(sprintf('Test 1 corr %2.3f and coef:',corr));
 disp(ca');
 
 
 %Add some randomness to make sure it's not falsely exact
-[xnew,corr,ca,cb]=IR(x+rand(1,length(x))*0.01,f,5,0);
+[ca,cb,cc,xnew,corr]=IR(x+rand(1,length(x))*0.01,f,5,0);
 disp(sprintf('Test 1+rand corr %2.3f and coef:',corr));
 disp(ca');
 
@@ -39,11 +39,11 @@ x=rand(1,len);
 for i=nx+1:len-lag
     x(i+lag)=xco*x(i-nx:i-1)';
 end
-[xnew,corr,ca,cb]=IR(x,f,5,0,lag);
+[ca,cb,cc,xnew,corr]=IR(x,f,5,0,lag);
 disp(sprintf('Test 2 corr %2.3f and coef:',corr));
 disp(ca');
 
-[xnew,corr,ca,cb]=IR(x+rand(1,length(x))*0.01,f,5,0,lag);
+[ca,cb,cc,xnew,corr]=IR(x+rand(1,length(x))*0.01,f,5,0,lag);
 disp(sprintf('Test 2+rand corr %2.3f and coef:',corr));
 disp(ca');
 
@@ -52,12 +52,10 @@ disp(ca');
 disp('Test 3: Only response');
 
 x=rand(1,len);
-%NOTE: Don't think it should be 6 coef, but currently have IR set to think
-%we have current F but one-lag X
 for i=nx+1:len
     x(i)=fco*f(i-nx:i-1)';
 end
-[xnew,corr,ca,cb]=IR(x,f,0,5);
+[ca,cb,cc,xnew,corr]=IR(x,f,0,5);
 disp(sprintf('Test 3 corr %2.3f and coef:',corr));
 disp(cb');
 
@@ -68,7 +66,7 @@ x=rand(1,len);
 for i=nx+1:len
     x(i)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
 end
-[xnew,corr,ca,cb]=IR(x,f,5,5);
+[ca,cb,cc,xnew,corr]=IR(x,f,5,5);
 disp(sprintf('Test 4 corr %2.3f and coefs:',corr));
 disp(ca');
 disp(cb');
@@ -80,7 +78,7 @@ x=rand(1,len);
 for i=nx+1:len-lag
     x(i+lag)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
 end
-[xnew,corr,ca,cb]=IR(x,f,5,5,1);
+[ca,cb,cc,xnew,corr]=IR(x,f,5,5,1);
 disp(sprintf('Test 5 corr %2.3f and coefs:',corr));
 disp(ca');
 disp(cb');
@@ -92,7 +90,7 @@ x=rand(1,len);
 for i=nx+1:len-lag
     x(i+lag)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
 end
-[xnew,corr,ca,cb]=IR(x+rand(1,length(x))*0.01,f+rand(1,length(x))*0.01,5,5,1);
+[ca,cb,cc,xnew,corr]=IR(x+rand(1,length(x))*0.01,f+rand(1,length(x))*0.01,5,5,1);
 disp(sprintf('Test 6 corr %2.3f and coefs:',corr));
 disp(ca');
 disp(cb');
@@ -103,7 +101,7 @@ x=rand(1,len);
 for i=nx+1:len
     x(i)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)'+0.5;
 end
-[xnew,corr,ca,cb,cc]=IR(x,f,5,5);
+[ca,cb,cc,xnew,corr]=IR(x,f,5,5);
 disp(sprintf('Test 7 corr %2.3f and coefs:',corr));
 disp(ca');
 disp(cb');
@@ -115,7 +113,7 @@ x=rand(1,len);
 for i=nx+1:len
     x(i)=xco*x(i-nx:i-1)'+fco*f(i-nx:i-1)'+0.5;
 end
-[xnew,corr,ca,cb,cc]=IR(x,f,6,6);
+[ca,cb,cc,xnew,corr]=IR(x,f,6,6);
 disp(sprintf('Test 8 corr %2.3f and coefs:',corr));
 disp(ca');
 disp(cb');
@@ -139,7 +137,7 @@ disp(cb2');
 disp(cc');
 
 %------------------
-disp('Test 10: Sorted IR, second x coef just reverse of first');
+disp('Test 10: Sorted IR, different x coef, overlap not accounted for');
 x=rand(1,len);
 sorter=1:len;
 for i=nx+1:len/2
@@ -147,7 +145,7 @@ for i=nx+1:len/2
     %x2(i)=fliplr(xco)*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
 end
 xco2=[-0.3, 0.1, 0.1, -0.2, 0.3];
-for i=len/2+1:len
+for i=(len/2+1):len
     x(i)=xco2*x(i-nx:i-1)'+fco*f(i-nx:i-1)';
 end
 %x(sorter>mean(sorter))=x2(sorter>mean(sorter));

@@ -1,10 +1,10 @@
-function [xnew, xnew2, corr, corr2, ca, ca2, cb, cb2, cc, cc2, casd,ca2sd,cbsd,cb2sd] = IRsortboot(x,f,sorter,N,numxcoef,numfcoef,lag)
-%Usage: [xnew, xnew2, corr, corr2, ca, ca2, cb, cb2, cc, cc2, casd,ca2sd,cbsd,cb2sd] = IRsort(x,f,sorter,numxcoef,numfcoef,lag)
+function [ca, ca2, cb, cb2, cc, cc2, xnew, xnew2, corr, corr2, casd,ca2sd,cbsd,cb2sd] = IRsortboot(x,f,sorter,N,numxcoef,numfcoef,lag, advance)
+%Usage: [xnew, xnew2, corr, corr2, ca, ca2, cb, cb2, cc, cc2, casd,ca2sd,cbsd,cb2sd] = IRsortboot(x,f,sorter,numxcoef,numfcoef,lag)
 %Where ca are the x coefficients, cb the f coefficients
 %Allows for a matrix of impulses
 %***Important: Assumes more data points than impulses***%
  
-if (nargin < 6) || (nargin > 7)
+if (nargin < 7) || (nargin > 8)
     disp('Usage: [xnew, xnew2, corr, corr2, ca, ca2, cb, cb2, cc, cc2] = IRsort(x,f,sorter,numxcoef,numfcoef,lag)');
     disp('Where ca are the x coefficients, cb the f coefficients');
     disp('***Important: Assumes more data points than impulses***');
@@ -12,7 +12,12 @@ if (nargin < 6) || (nargin > 7)
 end
 if nargin == 6
     lag=0;
+    advance=0;
 end
+if nargin == 7
+    advance=0;
+end
+
 
 %Make x and f row vectors for standardization purposes
 if(length(x)~=size(x,2))
@@ -25,13 +30,14 @@ if(length(sorter)~=size(sorter,2))
     sorter=sorter';
 end
 
-predstart=max(numxcoef,numfcoef)+1+lag;
+%Index for first predicted timestep
+predstart=max(numxcoef,numfcoef)+1+lag-advance;
 
-xstart=predstart-numxcoef-lag;
-fstart=predstart-numfcoef-lag;
+xstart=predstart-numxcoef-lag+advance;
+fstart=predstart-numfcoef-lag+advance;
 
 
-len=floor(length(x)-predstart);
+len=floor(length(x)-predstart-advance);
 
 numimpulses=min(size(f));
     
@@ -49,7 +55,7 @@ end
 
 %Add sorter. A=[xs... fs... 1 sort]
 for i=1:len
-   A(i,end)=mean(sorter(xstart+i:xstart+numxcoef+i));
+   A(i,end)=mean(sorter(fstart+i:fstart+numfcoef+i));
 end
 
 A(:,end-1)=1;
@@ -133,7 +139,7 @@ cb2sd=std(cb2s);
     
     %Anywhere f is nan, don't predict, just copy data
     iter=1:(length(f));
-    iter=iter(iter>=predstart); %Don't use copied variables
+    iter=iter(iter>=predstart+advance); %Don't use copied variables
     iter=iter(iter<=length(f)-lag); %Allow space to predict
     
     for i=iter

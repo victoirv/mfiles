@@ -1,17 +1,21 @@
-function [xnew, corr, ca, cb,cc] = IR(x,f,numxcoef,numfcoef,lag)
-%Usage: [xnew, corr, ca, cb] = IRm(x,f,numxcoef,numfcoef,lag)
+function [ca, cb, cc, xnew, corr, eff] = IR(x,f,numxcoef,numfcoef,lag,advance)
+%Usage: [xnew, corr, ca, cb,cc, eff] = IR(x,f,numxcoef,numfcoef,lag)
 %Where ca are the x coefficients, cb the f coefficients
 %Allows for a matrix of impulses
 %***Important: Assumes more data points than impulses***%
  
-if (nargin < 4) || (nargin > 5)
-    disp('Usage: [xnew, corr, ca, cb] = IRm(x,f,numxcoef,numfcoef,lag)');
+if (nargin < 4) || (nargin > 6)
+    disp('Usage: [xnew, corr, ca, cb,cc, eff] = IR(x,f,numxcoef,numfcoef,lag)');
     disp('Where ca are the x coefficients, cb the f coefficients');
     disp('***Important: Assumes more data points than impulses***');
     error('');
 end
 if nargin == 4
     lag=0;
+    advance=0;
+end
+if nargin == 5
+    advance=0;
 end
 
 %Make x and f row vectors for standardization purposes
@@ -22,13 +26,13 @@ if(length(f)~=size(f,2))
     f=f';
 end
 
-predstart=max(numxcoef,numfcoef)+1+lag;
+predstart=max(numxcoef,numfcoef)+1+lag-advance;
 
-xstart=predstart-numxcoef-lag;
-fstart=predstart-numfcoef-lag;
+xstart=predstart-numxcoef-lag+advance;
+fstart=predstart-numfcoef-lag+advance;
 
 
-len=floor(length(x)-predstart);
+len=floor(length(x)-predstart-advance);
 
 numimpulses=min(size(f));
     
@@ -72,23 +76,26 @@ xnew(1:predstart)=xtemp(1:predstart);
 
 %Anywhere f is nan, don't predict, just copy data
 iter=1:(length(f));
-iter=iter(iter>=predstart); %Don't use copied variables
+iter=iter(iter>=predstart+advance); %Don't use copied variables
 iter=iter(iter<=length(f)-lag); %Allow space to predict 
+
+
 
 for i=iter
     %xnew(i)=(xnew(i-numxcoef:1:i-1)'*ca)+(ftemp(i-numfcoef+1:1:i)'*cb)+cc;
     xnew(i+lag)=(xtemp(i-numxcoef:1:i-1)*ca)+(reshape(ftemp(:,i-numfcoef:1:i-1),1,[])*cb)+cc;
+    
+    
     %xnew(i+lag)=(xnew(i-numxcoef:1:i-1)*ca)+(reshape(ftemp(:,i-numfcoef:1:i-1),1,[])*cb)+cc;
 end
 
 %xnew(isnan(f))=NaN;
-
-
-
-
 
 %Calculate correlation here to save program from needing to strip NaNs
 skip=(isnan(xnew) | isnan(xtemp));
 skip(1:predstart+lag)=1;
 corr=corrcoef(xnew(~skip),xtemp(~skip)); %Ignore first added bit
 corr=corr(1,2);
+
+eff=sum(xnew(predstart+1:end)>xnew(predstart:end-1) & xtemp(predstart+1:end)>xtemp(predstart:end-1))+sum(xnew(predstart+1:end)<xnew(predstart:end-1) & xtemp(predstart+1:end)<xtemp(predstart:end-1));
+eff=eff/(length(xnew)-predstart);
